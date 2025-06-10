@@ -1,4 +1,4 @@
-module fsm(
+module fsm (
     input wire clk,
     input wire rst_n,
     output reg wr_en,
@@ -6,32 +6,31 @@ module fsm(
     input wire [3:0] fifo_words
 );
 
-    // Estados da máquina
-    parameter ESCREVENDO = 1'b0;
-    parameter ESPERANDO  = 1'b1;
+    localparam WRITE = 1'b0, WAIT = 1'b1;
+    reg state, next_state;
 
-    reg estado;
+    assign fifo_data = 8'hAA;
 
-    assign fifo_data = 8'hAA; // dado constante
-
-    always @(posedge clk or negedge rst_n) begin
+    // Transição de estado
+    always @(posedge clk) begin
         if (!rst_n)
-            estado <= ESCREVENDO;
-        else begin
-            case (estado)
-                ESCREVENDO:
-                    if (fifo_words >= 5)
-                        estado <= ESPERANDO;
-
-                ESPERANDO:
-                    if (fifo_words <= 2)
-                        estado <= ESCREVENDO;
-            endcase
-        end
+            state <= WRITE;
+        else
+            state <= next_state;
     end
 
-    // Saída: escreve somente se no estado ESCREVENDO
+    // Lógica de próxima transição
     always @(*) begin
-        wr_en = (estado == ESCREVENDO);
+        case (state)
+            WRITE: next_state = (fifo_words == 5) ? WAIT : WRITE;
+            WAIT:  next_state = (fifo_words <= 2) ? WRITE : WAIT;
+            default: next_state = WRITE;
+        endcase
     end
+
+    // Saída de controle
+    always @(*) begin
+        wr_en = (state == WRITE);
+    end
+
 endmodule
