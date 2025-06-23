@@ -42,5 +42,6 @@ module fifo (
         if (rd_en && !empty)
             data_out <= mem[r_ptr];
     end
+    
 
 endmodule
